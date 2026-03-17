@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CTO Digest: Calibration</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg: #050505;
+            --panel: #0b1016;
+            --text-main: #d1d5db;
+            --text-muted: #64748b;
+            --blue: #22d3ee;
+            --purple: #a855f7;
+            --red: #ef4444;
+            --green: #4ade80;
+        }
+
+        body, html {
+            width: 100%; min-height: 100%;
+            background-color: var(--bg);
+            color: var(--text-main);
+            font-family: 'Courier New', Courier, monospace;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+
+        /* Scanlines */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(to bottom, rgba(255,255,255,0) 50%, rgba(0,0,0,0.2) 50%);
+            background-size: 100% 4px;
+            z-index: 999;
+            pointer-events: none;
+            opacity: 0.3;
+        }
+
+        .container {
+            width: 100%; max-width: 800px;
+            margin: 0 auto;
+            padding: 60px 20px 100px 20px;
+        }
+
+        .header-title {
+            font-size: 2rem; color: #fff;
+            margin-bottom: 10px; font-weight: normal;
+        }
+        .header-sub {
+            color: var(--red); font-size: 1rem;
+            margin-bottom: 50px; text-transform: uppercase; letter-spacing: 2px;
+        }
+
+        /* Compare Grid */
+        .compare-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 50px;
+        }
+
+        @media (max-width: 768px) {
+            .compare-grid { grid-template-columns: 1fr; }
+        }
+
+        .module {
+            background: var(--panel);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 4px;
+            padding: 25px;
+            position: relative;
+        }
+        
+        .module.det { border-top: 3px solid var(--blue); }
+        .module.prob { border-top: 3px solid var(--purple); opacity: 0.3; transition: opacity 0.5s; pointer-events: none;}
+        .module.prob.active { opacity: 1; pointer-events: auto; }
+
+        .mod-title { font-size: 1.2rem; color: #fff; margin-bottom: 15px; }
+        .mod-desc { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 25px; min-height: 40px;}
+
+        .terminal-screen {
+            background: #000;
+            padding: 15px;
+            border-radius: 4px;
+            min-height: 120px;
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .code-input { color: var(--text-muted); margin-bottom: 10px; }
+        .code-output { color: #fff; font-weight: bold; font-size: 1.1rem; }
+
+        .btn {
+            width: 100%;
+            background: transparent;
+            border: 1px solid var(--text-muted);
+            color: var(--text-main);
+            padding: 12px;
+            font-family: inherit;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .module.det .btn:hover { border-color: var(--blue); color: var(--blue); }
+        .module.prob .btn:hover { border-color: var(--purple); color: var(--purple); }
+
+        /* Probabilistic Engine Animation */
+        .dice-roll { display: inline-block; animation: spin 0.1s linear infinite; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* The Shift Section */
+        .the-shift {
+            display: none;
+            margin-top: 60px;
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 40px;
+            background: rgba(255,255,255,0.02);
+            animation: fadeIn 1s ease forwards;
+        }
+
+        .shift-title { color: var(--green); font-size: 1.5rem; margin-bottom: 20px; }
+        .shift-text { line-height: 1.8; margin-bottom: 20px; font-size: 1.05rem; }
+
+        /* Agent Diagram */
+        .agent-diagram {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin: 40px 0;
+            flex-wrap: wrap;
+        }
+        .box { border: 1px solid var(--text-muted); padding: 10px 20px; text-align: center; font-size: 0.9rem; }
+        .box.llm { border-color: var(--purple); color: var(--purple); font-weight: bold; }
+        .box.tool { border-color: var(--blue); color: var(--blue); }
+        .box.exec { border-color: var(--green); color: var(--green); }
+        .arrow { color: var(--text-muted); }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        
+        <h1 class="header-title">Paradigm Shift.</h1>
+        <p class="header-sub">Calibrating Expectations...</p>
+
+        <div class="compare-grid">
+            
+            <!-- Deterministic -->
+            <div class="module det">
+                <h2 class="mod-title">1. Deterministic System</h2>
+                <p class="mod-desc">Traditional software. Based on rigid rules. The outcome is always guaranteed.</p>
+                
+                <div class="terminal-screen" id="det-screen">
+                    <div class="code-input">> Execute: 245 * 13</div>
+                    <div class="code-output" style="opacity: 0.2;">Waiting for execution...</div>
+                </div>
+
+                <button class="btn" id="btn-det" onclick="runDet()">[ Execute Function ]</button>
+            </div>
+
+            <!-- Probabilistic -->
+            <div class="module prob" id="prob-module">
+                <h2 class="mod-title">2. Probabilistic System</h2>
+                <p class="mod-desc">Generative AI. Based on statistical prediction. The outcome is fluid.</p>
+                
+                <div class="terminal-screen" id="prob-screen">
+                    <div class="code-input">> Prompt: "Create a concept for an app"</div>
+                    <div class="code-output" style="opacity: 0.2; font-size: 0.9rem; font-weight: normal;">Waiting for execution...</div>
+                </div>
+
+                <button class="btn" id="btn-prob" onclick="runProb()">[ Generate Probability ]</button>
+            </div>
+
+        </div>
+
+        <div class="the-shift" id="the-shift">
+            <h2 class="shift-title">Act like a pro.</h2>
+            <p class="shift-text">
+                When you use tools like <strong>Midjourney</strong>, <strong>Claude</strong>, or <strong>Suno</strong>, you are not writing code. You are rolling loaded dice in an infinite multidimensional space.
+            </p>
+            <p class="shift-text">
+                Because they are probabilistic, <span style="color: var(--blue);">the creative limit is no longer the ability to use the software.</span><br>
+                The limit is your <strong>imagination</strong> and your ability to guide the chaos.
+            </p>
+            
+            <div style="margin: 40px 0; border-top: 1px dashed var(--text-muted); padding-top: 40px;">
+                <h3 style="color: #fff; margin-bottom: 20px;">The Next Evolution: Agentic AI</h3>
+                <p class="shift-text">What happens when you give the probabilistic engine hands? You get Agents. An LLM that can use tools.</p>
+                
+                <div class="agent-diagram">
+                    <div class="box llm">LLM (Brain)</div>
+                    <div class="arrow">→</div>
+                    <div class="box tool">Search / Python / Memory</div>
+                    <div class="arrow">→</div>
+                    <div class="box exec">Autonomous Action</div>
+                </div>
+            </div>
+
+            <p style="text-align: center; color: var(--text-muted); font-size: 0.9rem; margin-top: 40px;">
+                Calibration complete. You are ready.<br>
+                <span style="color: var(--green); display: block; margin-top: 10px;">See you at CTO Digest #1.</span>
+            </p>
+        </div>
+
+    </div>
+
+    <script>
+        let probUnlocked = false;
+
+        function runDet() {
+            const screen = document.getElementById('det-screen');
+            const btn = document.getElementById('btn-det');
+            
+            screen.innerHTML = `
+                <div class="code-input">> Execute: 245 * 13</div>
+                <div class="code-output" style="color: var(--blue);">3185</div>
+            `;
+            btn.innerText = "[ Executed: Zero Variance ]";
+            btn.disabled = true;
+            btn.style.borderColor = "var(--blue)";
+            btn.style.color = "var(--blue)";
+
+            if(!probUnlocked) {
+                setTimeout(() => {
+                    document.getElementById('prob-module').classList.add('active');
+                    probUnlocked = true;
+                }, 1000);
+            }
+        }
+
+        const probOutputs = [
+            "Idea: A fitness app that insults you when you skip workouts. (Probability: 42%)",
+            "Idea: A recipe app based purely on what's expiring in your fridge today. (Probability: 68%)",
+            "Idea: A social network where you can only post using ancient Latin. (Probability: 12%)",
+            "Idea: A budget app that transfers money to your enemy if you overspend. (Probability: 31%)",
+            "Idea: A meditation app narrated by Morgan Freeman AI. (Probability: 89%)"
+        ];
+
+        let clickCount = 0;
+
+        function runProb() {
+            const screen = document.getElementById('prob-screen');
+            const btn = document.getElementById('btn-prob');
+            
+            btn.disabled = true;
+            screen.innerHTML = `
+                <div class="code-input">> Prompt: "Create a concept for an app"</div>
+                <div class="code-output" style="color: var(--purple); font-size: 0.9rem; font-weight: normal;"><span class="dice-roll">⚄</span> Collapsing wave function...</div>
+            `;
+
+            setTimeout(() => {
+                const randomIdea = probOutputs[Math.floor(Math.random() * probOutputs.length)];
+                screen.innerHTML = `
+                    <div class="code-input">> Prompt: "Create a concept for an app"</div>
+                    <div class="code-output" style="color: var(--purple); font-size: 0.9rem; font-weight: normal;">${randomIdea}</div>
+                `;
+                
+                clickCount++;
+                btn.disabled = false;
+                
+                if(clickCount === 1) {
+                    btn.innerText = "[ Reroll ] (Notice the change)";
+                } else if(clickCount === 3) {
+                    document.getElementById('the-shift').style.display = 'block';
+                    document.getElementById('the-shift').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+
+            }, 800);
+        }
+    </script>
+</body>
+</html>
