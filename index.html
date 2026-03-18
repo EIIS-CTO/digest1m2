@@ -371,10 +371,10 @@
                 <!-- Deterministic -->
                 <div class="module det">
                     <h2 class="mod-title">1. Deterministic System</h2>
-                    <p class="mod-desc">Think of traditional code or databases. You write exact logical rules, the machine follows the tracks, and the output is rigidly guaranteed.</p>
+                    <p class="mod-desc">Think of data formatting or traditional code. You write exact logical rules, the machine follows the tracks, and the output is rigidly guaranteed.</p>
                     
                     <div class="terminal-screen" id="det-screen">
-                        <div class="code-input">> Execute: db.getRecord(id=101)</div>
+                        <div class="code-input">> Execute: formatDate("2026-03-27", format="DD/MM/YYYY")</div>
                         <div class="code-output" style="opacity: 0.2;">Waiting for execution...</div>
                     </div>
 
@@ -509,8 +509,8 @@
             const btn = document.getElementById('btn-det');
             
             screen.innerHTML = `
-                <div class="code-input">> Execute: db.getRecord(id=101)</div>
-                <div class="code-output" style="color: var(--blue);">> { "name": "Thomas Anderson", "status": "Awake" }</div>
+                <div class="code-input">> Execute: formatDate("2026-03-27", format="DD/MM/YYYY")</div>
+                <div class="code-output" style="color: var(--blue);">> "27/03/2026"</div>
             `;
             btn.innerText = "[ Executed: Zero Variance ]";
             btn.disabled = true;
